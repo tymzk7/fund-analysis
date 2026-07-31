@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>Asset Analysis Report</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 24px; }
+table { border-collapse: collapse; width: 100%; margin-bottom: 24px; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+th { background: #f8f8f8; }
+img { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<h1>Analysis Report</h1>
+<p>Generated analysis report for ^GSPC.</p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Symbol</th>
+      <th>R²</th>
+      <th>Slope/d</th>
+      <th>Annual Growth</th>
+      <th>Current Deviation</th>
+      <th>Residual Percentile</th>
+      <th>Within 95% Interval</th>
+      <th>Max Drawdown</th>
+      <th>Current Drawdown</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>^GSPC</td>
+      <td>0.8831</td>
+      <td>0.000410</td>
+      <td>16.12%</td>
+      <td>4.30%</td>
+      <td>79.7%</td>
+      <td>Yes</td>
+      <td>-25.43%</td>
+      <td>-1.81%</td>
+    </tr>
+  </tbody>
+</table>
+<h2>Chart</h2>
+<p><img src="analysis_chart.png" alt="Analysis chart" /></p>
+</body>
+</html>
