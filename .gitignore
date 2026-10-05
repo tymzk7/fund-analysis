@@ -4,3 +4,7 @@ __pycache__/
 *.pyo
 *.pyd
 *.log
+
+# Generated analysis artifacts
+analysis/outputs/
+site/
