@@ -27,6 +27,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--output-dir", default=str(OUTPUT_DIR), help="Directory to save charts and reports")
     parser.add_argument("--save-png", action="store_true", help="Save chart as PNG")
     parser.add_argument("--save-html", action="store_true", help="Save analysis report as HTML")
+    parser.add_argument("--no-show", action="store_true", help="Do not open an interactive chart window")
     return parser.parse_args()
 
 
@@ -44,34 +45,25 @@ def main(args: Namespace | None = None) -> None:
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-
     asset_identifiers = build_asset_list(args.source, args.asset)
-    asset_results: Dict[str, Tuple[Path, RegressionResult, AnalysisStats]] = {}
+    asset_results: Dict[str, Tuple[object, RegressionResult, AnalysisStats]] = {}
 
     for asset_identifier in asset_identifiers:
-        data = load_price_data(
-            source=args.source,
-            identifier=asset_identifier,
-            start_date=args.start_date,
-            end_date=args.end_date,
-            period=args.period,
-        )
+        data = load_price_data(source=args.source, identifier=asset_identifier,
+                               start_date=args.start_date, end_date=args.end_date, period=args.period)
         regression_result = fit_log_price_regression(data)
         stats = compute_analysis_stats(data, regression_result)
         asset_name = Path(asset_identifier).stem if args.source in {"csv", "msci"} else asset_identifier
         asset_results[asset_name] = (data, regression_result, stats)
 
     plot_path = output_dir / DEFAULT_PLOT_PATH.name if (args.save_png or args.save_html) else None
-    plot_assets_analysis(
-        asset_results,
-        save_path=plot_path,
-        show_moving_average=True,
-        show_bollinger=True,
-    )
+    plot_assets_analysis(asset_results, save_path=plot_path, show_moving_average=True,
+                         show_bollinger=True, show=not args.no_show)
 
     if args.save_html:
         report_path = output_dir / DEFAULT_REPORT_PATH.name
-        generate_html_report({name: stats for name, (_, _, stats) in asset_results.items()}, plot_path or DEFAULT_PLOT_PATH, report_path)
+        generate_html_report({name: stats for name, (_, _, stats) in asset_results.items()},
+                             plot_path or DEFAULT_PLOT_PATH, report_path)
 
 
 if __name__ == "__main__":

@@ -23,6 +23,7 @@ def plot_assets_analysis(
     show_moving_average: bool = False,
     show_bollinger: bool = False,
     save_path: Path | None = None,
+    show: bool = True,
 ) -> None:
     """Plot one or more assets with regression and optional technical indicators."""
     fig, ax = plt.subplots(figsize=(14, 8))
@@ -31,22 +32,10 @@ def plot_assets_analysis(
     for index, (label, (data, regression_result, stats)) in enumerate(asset_results.items()):
         color = colors[index % len(colors)]
         ax.plot(data["Date"], data["Price"], label=f"{label} Price", color=color, linewidth=1.5)
-        ax.plot(
-            data["Date"],
-            regression_result.price_predictions,
-            label=f"{label} Regression",
-            color=color,
-            linestyle="--",
-            linewidth=1.2,
-        )
-        ax.fill_between(
-            data["Date"],
-            stats.lower_bound,
-            stats.upper_bound,
-            color=color,
-            alpha=0.15,
-            label=f"{label} 95% Interval",
-        )
+        ax.plot(data["Date"], regression_result.price_predictions, label=f"{label} Regression",
+                color=color, linestyle="--", linewidth=1.2)
+        ax.fill_between(data["Date"], stats.lower_bound, stats.upper_bound, color=color,
+                        alpha=0.15, label=f"{label} 95% Interval")
 
         if show_moving_average:
             moving_average = compute_moving_average(data["Price"], window=50)
@@ -64,36 +53,26 @@ def plot_assets_analysis(
     ax.set_title("Long-Term Trend Analysis with Log-Linear Regression")
     ax.legend(loc="upper left", fontsize=8)
     ax.grid(True, which="both", linestyle="--", linewidth=0.4, alpha=0.7)
-
     _annotate_statistics(ax, asset_results)
-
     fig.tight_layout()
 
     if save_path is not None:
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(save_path, dpi=150)
-    plt.show()
+        fig.savefig(save_path, dpi=150)
+    if show:
+        plt.show()
+    plt.close(fig)
 
 
 def _annotate_statistics(ax: plt.Axes, asset_results: dict[str, tuple[pd.DataFrame, RegressionResult, AnalysisStats]]) -> None:
     """Add a summary statistics box to the plot."""
     lines: list[str] = []
     for label, (_, _, stats) in asset_results.items():
-        lines.append(
-            f"[{label}] R²={stats.r_squared:.4f}, CAGR={stats.annual_growth_rate*100:.2f}%",
-        )
+        lines.append(f"[{label}] R²={stats.r_squared:.4f}, CAGR={stats.annual_growth_rate*100:.2f}%")
         lines.append(
             f"     Dev={stats.current_deviation_pct:.2f}%, Pctl={stats.current_residual_percentile:.1f}%, "
             f"Drawdown={stats.current_drawdown_pct:.2f}%"
         )
-    annotation = "\n".join(lines)
-
-    ax.text(
-        0.01,
-        0.99,
-        annotation,
-        transform=ax.transAxes,
-        fontsize=9,
-        verticalalignment="top",
-        bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.85, "edgecolor": "gray"},
-    )
+    ax.text(0.01, 0.99, "\n".join(lines), transform=ax.transAxes, fontsize=9,
+            verticalalignment="top",
+            bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.85, "edgecolor": "gray"})
