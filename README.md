@@ -117,3 +117,26 @@ python main.py --source msci --asset data/msci_sample.csv --save-png --save-html
 
 - `python main.py` を実行する場合、`analysis` フォルダ内に移動してから実行してください。
 - `--asset` は複数指定できます。
+
+
+## GitHub Pages
+
+GitHub Actions で公開市場データを取得・分析し、静的な分析ダッシュボードを GitHub Pages にデプロイできます。
+
+Pages ワークフローは以下のタイミングで実行されます。
+
+- `main` ブランチへの push
+- 平日 07:15 JST の定期実行
+- GitHub Actions 画面からの手動実行
+
+現在の公開用分析対象は `ACWI` と `^GSPC` の直近10年です。公開 artifact には次のファイルだけを含めます。
+
+- `index.html`
+- `analysis_chart.png`
+- `.nojekyll`
+
+Python ソース、CSV、ローカルファイル、個人資産情報は Pages artifact に含めません。
+
+### 公開時の注意
+
+このリポジトリを public に変更する場合も、個人の保有額、口座情報、認証情報、API キーなどはコミットしないでください。生成物の `analysis/outputs/` と `site/` は Git 管理対象外です。
