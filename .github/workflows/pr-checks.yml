@@ -1,0 +1,31 @@
+name: Validate pull requests
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: analysis/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r analysis/requirements.txt
+      - name: Validate Python syntax
+        run: python -m compileall -q analysis
+      - name: Build sample analysis without network
+        env:
+          MPLBACKEND: Agg
+        run: |
+          python analysis/main.py --source csv --asset analysis/data/sample.csv --output-dir /tmp/fund-analysis-ci --save-png --save-html --no-show
+          test -s /tmp/fund-analysis-ci/analysis_chart.png
+          test -s /tmp/fund-analysis-ci/analysis_report.html
