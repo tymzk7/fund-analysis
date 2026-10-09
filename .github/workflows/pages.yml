@@ -6,11 +6,14 @@ on:
   schedule:
     - cron: "15 22 * * 1-5"
   workflow_dispatch:
+  pull_request_target:
+    types: [opened, synchronize, reopened, closed]
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: write
 
 concurrency:
   group: pages
@@ -55,6 +58,45 @@ jobs:
           touch site/.nojekyll
           find site -maxdepth 1 -type f -printf '%f\n' | sort
 
+      - name: Build open PR previews
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          base_sha="$(git rev-parse HEAD)"
+          mkdir -p site/preview
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" --jq '.[] | select(.head.repo.full_name == .base.repo.full_name) | [.number, .head.sha] | @tsv' > /tmp/prs.tsv
+          while IFS=        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+\t' read -r number sha; do
+            [[ -n "$number" ]] || continue
+            git fetch --no-tags --depth=1 origin "$sha"
+            git checkout --detach FETCH_HEAD
+            python -m pip install -r analysis/requirements.txt
+            if python analysis/main.py --source yahoo --asset ACWI --asset '^GSPC' --period 10y --output-dir "analysis/outputs/pr-$number" --save-png --save-html --no-show; then
+              mkdir -p "site/preview/pr-$number"
+              cp "analysis/outputs/pr-$number/analysis_report.html" "site/preview/pr-$number/index.html"
+              cp "analysis/outputs/pr-$number/analysis_chart.png" "site/preview/pr-$number/analysis_chart.png"
+            else
+              echo "::warning::Preview build failed for PR #$number"
+            fi
+            git checkout --detach "$base_sha"
+          done < /tmp/prs.tsv
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
@@ -73,3 +115,16 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  comment-preview:
+    if: github.event_name == 'pull_request_target' && github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Post preview URL
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          url="https://tymzk7.github.io/fund-analysis/preview/pr-$PR_NUMBER/"
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Preview: $url"
