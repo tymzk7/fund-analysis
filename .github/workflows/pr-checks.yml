@@ -22,10 +22,20 @@ jobs:
         run: python -m pip install -r analysis/requirements.txt
       - name: Validate Python syntax
         run: python -m compileall -q analysis
-      - name: Build sample analysis without network
+      - name: Generate review report and chart
         env:
           MPLBACKEND: Agg
         run: |
-          python analysis/main.py --source csv --asset analysis/data/sample.csv --output-dir /tmp/fund-analysis-ci --save-png --save-html --no-show
-          test -s /tmp/fund-analysis-ci/analysis_chart.png
-          test -s /tmp/fund-analysis-ci/analysis_report.html
+          python analysis/main.py --source csv --asset analysis/data/sample.csv --output-dir analysis/outputs/pr-review --save-png --save-html --no-show
+          test -s analysis/outputs/pr-review/analysis_chart.png
+          test -s analysis/outputs/pr-review/analysis_report.html
+      - name: Upload review artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-review-${{ github.event.pull_request.number || github.run_id }}
+          path: |
+            analysis/outputs/pr-review/analysis_report.html
+            analysis/outputs/pr-review/analysis_chart.png
+          retention-days: 14
+          if-no-files-found: error
