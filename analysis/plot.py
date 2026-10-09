@@ -73,10 +73,10 @@ def plot_assets_analysis(
             Line2D([0], [0], color="0.35", linewidth=0.6, alpha=0.7, label="BB Upper / Lower"),
         ])
 
-    # Header occupies the upper 27% of the figure, separate from the plot.
-    fig.subplots_adjust(top=0.73, bottom=0.11, left=0.08, right=0.98)
-    fig.legend(handles=asset_handles + style_handles, loc="upper center",
-               bbox_to_anchor=(0.5, 0.89), ncol=4, fontsize=9, frameon=False)
+    # Prioritize the plot; keep the legend inside and the statistics below it.
+    fig.subplots_adjust(top=0.92, bottom=0.25, left=0.08, right=0.98)
+    ax.legend(handles=asset_handles + style_handles, loc="upper left",
+              ncol=2, fontsize=8, frameon=True, framealpha=0.8)
     _annotate_statistics(fig, asset_results)
 
     if save_path is not None:
@@ -88,7 +88,7 @@ def plot_assets_analysis(
 
 
 def _annotate_statistics(fig: plt.Figure, asset_results: dict[str, tuple[pd.DataFrame, RegressionResult, AnalysisStats]]) -> None:
-    """Place summary statistics in the reserved figure header."""
+    """Place summary statistics below the plot, outside the data axes."""
     lines: list[str] = []
     for label, (_, _, stats) in asset_results.items():
         lines.append(f"[{label}] R²={stats.r_squared:.4f}, CAGR={stats.annual_growth_rate*100:.2f}%")
@@ -96,4 +96,4 @@ def _annotate_statistics(fig: plt.Figure, asset_results: dict[str, tuple[pd.Data
             f"     Dev={stats.current_deviation_pct:.2f}%, Pctl={stats.current_residual_percentile:.1f}%, "
             f"Drawdown={stats.current_drawdown_pct:.2f}%"
         )
-    fig.text(0.08, 0.985, "\n".join(lines), fontsize=9, verticalalignment="top")
+    fig.text(0.08, 0.15, "\n".join(lines), fontsize=9, verticalalignment="top")
